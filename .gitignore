@@ -1,0 +1,5 @@
+# Exclude Python virtual environments
+.venv/
+
+# Exclude JetBrains IDE settings
+.idea/
