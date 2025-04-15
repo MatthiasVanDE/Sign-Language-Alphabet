@@ -1,126 +1,73 @@
 # Sign Language Alphabet Recognition
 
-This project focuses on recognizing the American Sign Language (ASL) alphabet using hand landmarks extracted via Mediapipe and classified with traditional machine learning models. It supports all 26 static letters (A–Z) and includes both training and real-time prediction capabilities.
+This repository demonstrates a pipeline for recognizing static American Sign Language (ASL) alphabet letters using Mediapipe for hand landmark detection and traditional machine learning for classification. It covers the end-to-end process of dataset preparation, model training, and real-time prediction via webcam.
 
-## Project Goal
+## Overview
 
-The objective is to create a pipeline that can:
+The system identifies 21 keypoints on a single hand, then processes these landmarks to reduce variability in position, size, and orientation. These processed features are fed into machine learning models (KNN, Random Forest, SVM, or Logistic Regression) to classify the gesture.
 
-- Process and normalize static images of hands from an annotated ASL dataset
-- Extract hand landmarks using Mediapipe
-- Train and evaluate machine learning classifiers (KNN, Random Forest, SVM, Logistic Regression)
-- Use a webcam feed for real-time sign recognition
-- Provide a modular and extensible framework for future improvements
+## Folder Structure
 
-## Dataset
 
-The dataset consists of images of hands forming ASL letters, annotated in the COCO JSON format (`_annotations.coco.json`). Each annotation includes:
+- **data/**: Contains images and their annotation file (`_annotations.coco.json`).
+- **models/**: Stores trained model files (`.pkl`) and a label encoder.
+- **utils.py**: Contains helper functions for normalizing and flattening hand landmarks.
+- **load.py**: Reads annotations, applies landmark detection, normalizes them, and saves the feature set to CSV.
+- **train_model.py**: Trains one of several supported classifiers (KNN, Random Forest, SVM, or Logistic Regression) on the generated CSV data.
+- **predict_live.py**: Launches a webcam-based prediction demo.
+- **run_experiments.py**: Contains scripts for comparing multiple models, testing normalization strategies, applying dimensionality reduction, and (optionally) doing cross-user validation.
 
-- The image file name
-- The label corresponding to the hand gesture (A–Z)
-- A single hand per image
+## Setup
 
-Landmarks are extracted using Mediapipe’s `Hands` module with 21 hand keypoints per image (x, y, z).
+1. **Install Dependencies**  
+   Make sure Python 3.8+ is installed, then run: pip install -r requirements.txt
 
-## Preprocessing and Normalization
+2. **Prepare the Dataset**  
+- Place images of hands forming ASL letters in the `data/train/` folder.  
+- Update `_annotations.coco.json` accordingly, specifying image filenames and labels.
 
-To make the dataset model-ready, the following preprocessing steps are applied:
+3. **Generate CSV Dataset**  
+Detect and normalize landmarks for all images: 
+  ```
+  python load.py.py
+  ```
+This produces a CSV file (e.g., `hand_landmarks_dataset.csv`) with the features and labels.
 
-1. **Hand Landmark Extraction**  
-   Mediapipe is used to extract 21 hand landmarks (each with x, y, z coordinates) from each image.
+4. **Train a Model**  
+- Edit `train_model.py` to set `MODEL_TYPE` to one of:  
+  - `knn`  
+  - `random_forest`  
+  - `svm`  
+  - `logistic_regression`
+- Then run:
+  ```
+  python train_model.py
+  ```
+A trained model file (e.g., `random_forest_model.pkl`) and a `label_encoder.pkl` will be saved under `models/`.
 
-2. **Normalization**  
-   - **Centering**: All landmarks are centered around the wrist (landmark 0).
-   - **Scaling**: The landmarks are scaled by the distance between the wrist and the tip of the middle finger (landmark 12) to eliminate variation in hand size or camera distance.
+5. **Run Experiments**  
+To compare multiple classifiers, try different normalization approaches, visualize via PCA/t-SNE, or perform cross-user validation:
+  ```
+  python run_experiments.py
+  ```
 
-3. **CSV Output**  
-   The processed data is saved into a CSV file where each row contains 63 normalized values (21 landmarks × 3 dimensions) and a label column.
 
-## Model Training
+6. **Live Prediction**  
+Start a live demo that detects and classifies hand gestures via webcam:
+  ```
+  python predict_live.py
+  ```
+A window will open, showing the recognized letter on screen along with drawn hand landmarks.
 
-Multiple classifiers are supported, including:
+## Future Directions
 
-- K-Nearest Neighbors (KNN)
-- Random Forest
-- Support Vector Machine (SVM)
-- Logistic Regression
+- Extend the dataset for dynamic letters (like J and Z).
+- Implement more robust data augmentation (lighting, rotation, partial occlusion).
+- Explore deeper learning architectures (CNN, LSTM).
+- Use automated hyperparameter tuning for the traditional ML models.
+- Improve cross-user generalization with more diverse training samples.
 
-Training is done using `scikit-learn`. Labels are encoded using `LabelEncoder`, and the data is split using a stratified train/test split. The trained model and label encoder are saved to the `/models` directory using `joblib`.
+## License
 
-Model performance is evaluated using:
+This project is provided for educational and research purposes. Refer to third-party libraries and dataset sources for additional license details.
 
-- Accuracy
-- Precision, recall, and F1-score per class (via classification report)
-- Optionally, a confusion matrix for detailed analysis
-
-## Real-Time Prediction
-
-A live demo uses OpenCV and Mediapipe to:
-
-- Capture frames from the webcam
-- Detect and normalize hand landmarks
-- Predict the letter using the trained model
-- Display the result on the screen with the annotated hand
-
-The normalization process is fully integrated into the live prediction script, ensuring consistency with the training data.
-
-## Usage
-
-### 1. Preprocess the dataset and extract landmarks
-
-```
-python extract_landmarks.py
-```
-
-### 2. Train a model
-
-Set the `MODEL_TYPE` variable in `train_model.py` to one of the following:
-
-- `'knn'`
-- `'random_forest'`
-- `'svm'`
-- `'logistic_regression'`
-
-Then run the training script:
-
-```
-python train_model.py
-```
-
-### 3. Start live prediction
-
-Run the live prediction script with:
-
-```
-python live_predict.py
-```
-
-Make sure your webcam is connected and accessible.
-
-## Requirements
-
-- Python 3.8 or higher
-- OpenCV
-- Mediapipe
-- scikit-learn
-- joblib
-- pandas
-- numpy
-
-Install all dependencies using:
-
-```
-pip install -r requirements.txt
-```
-
-## Future Improvements
-
-- Add support for dynamic gestures (e.g., J, Z)
-- Include confidence thresholding for low-certainty predictions
-- Visualize hand skeletons with keypoint heatmaps
-- Train deep learning models (e.g., CNNs or LSTMs)
-- Improve dataset with diverse hand shapes and skin tones
-
-## Authors
-
-This project was developed as part of an academic assignment to explore real-time gesture recognition using traditional computer vision and machine learning techniques.
