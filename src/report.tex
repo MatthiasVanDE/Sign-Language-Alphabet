@@ -102,11 +102,11 @@ Experiments were conducted to address both research questions. We systematically
 All experiments were executed via \texttt{run\_experiments.py}, which automates training, evaluation, and result logging to facilitate reproducibility.
 
 \subsection{Model Comparison Results}
-Table \ref{tab:model-comparison} provides a placeholder summary of the four models tested:
+Table \ref{tab:model-comparison} provides a summary of the four models tested:
 
-\begin{table}[ht]
+\begin{table*}[ht]
 \centering
-\caption{Model Comparison Results (Placeholder)}
+\caption{Model Comparison Results}
 \label{tab:model-comparison}
 \begin{tabular}{lrrrrr}
 \toprule
@@ -118,16 +118,17 @@ svm                   & 0.763441 & 0.775478 & 0.744949 & 0.729576 & None \\
 logistic\_regression  & 0.820789 & 0.833100 & 0.811907 & 0.812426 & None \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
+
 
 Notably, the Random Forest classifier attained the highest accuracy (89.2\%), suggesting that its ensemble approach is especially well-suited to the variety of hand postures in this dataset. KNN and Logistic Regression yielded comparable performance (approximately 82\% accuracy), while SVM lagged behind at 76\%. This discrepancy may reflect the hyperparameter choices or the sensitivity of SVM to the multi-class nature of the problem. Future work could explore a grid search to optimize parameters.
 
 \subsection{Normalization Strategies}
-As shown in Table \ref{tab:normalization-results}, these placeholder results indicate that, for the current dataset, different normalization approaches yield similar performance:
+As shown in Table \ref{tab:normalization-results}, these results indicate that, for the current dataset, different normalization approaches yield similar performance:
 
 \begin{table}[ht]
 \centering
-\caption{Normalization Strategies Experiment (Placeholder)}
+\caption{Normalization Strategies Experiment}
 \label{tab:normalization-results}
 \begin{tabular}{lrr}
 \toprule
