@@ -5,50 +5,13 @@ import pandas as pd
 import json
 import math
 
+# === Nieuw: importeer de herbruikbare functies uit utils.py ===
+from utils import extract_and_normalize_landmarks
+
 # === Configuration ===
 DATASET_DIR = '../data/train'
 ANNOTATIONS_FILE = '../data/_annotations.coco.json'
 OUTPUT_CSV = 'hand_landmarks_dataset.csv'
-
-# === Normalization helper functions ===
-
-def center_landmarks(landmarks, ref_point):
-    """
-    Shift all landmarks so that the reference point (usually the wrist) is at the origin.
-    """
-    return [(x - ref_point[0], y - ref_point[1], z - ref_point[2]) for (x, y, z) in landmarks]
-
-def scale_landmarks(landmarks, scale_ref_a, scale_ref_b):
-    """
-    Scale landmarks relative to the distance between two reference points.
-    This helps eliminate variations due to hand distance from the camera.
-    """
-    distance = math.sqrt(
-        (scale_ref_a[0] - scale_ref_b[0])**2 +
-        (scale_ref_a[1] - scale_ref_b[1])**2 +
-        (scale_ref_a[2] - scale_ref_b[2])**2
-    )
-    distance = distance if distance != 0 else 1  # prevent division by zero
-    return [(x / distance, y / distance, z / distance) for (x, y, z) in landmarks]
-
-def extract_and_normalize_landmarks(hand_landmarks):
-    """
-    Extract (x, y, z) coordinates from Mediapipe landmarks and normalize them
-    by centering around the wrist and scaling based on wrist-to-middle-finger distance.
-    """
-    # Extract raw landmark coordinates
-    raw_landmarks = [(lm.x, lm.y, lm.z) for lm in hand_landmarks.landmark]
-
-    # Reference points
-    wrist = raw_landmarks[0]               # Landmark 0: wrist
-    middle_finger_tip = raw_landmarks[12]  # Landmark 12: tip of middle finger
-
-    # Center and scale the landmarks
-    centered = center_landmarks(raw_landmarks, wrist)
-    normalized = scale_landmarks(centered, wrist, middle_finger_tip)
-
-    # Flatten (x, y, z) tuples into a single list of 63 values
-    return [coord for point in normalized for coord in point]
 
 # === Load COCO annotations ===
 with open(ANNOTATIONS_FILE, 'r') as f:
