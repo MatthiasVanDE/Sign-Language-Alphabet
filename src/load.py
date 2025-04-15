@@ -1,3 +1,5 @@
+# load.py
+
 import cv2
 import mediapipe as mp
 import os
@@ -20,7 +22,7 @@ with open(ANNOTATIONS_FILE, 'r') as f:
 # Map image_id to filename
 image_id_to_filename = {img['id']: img['file_name'] for img in coco['images']}
 
-# Map image_id to class label (e.g., 'A', 'B', etc.)
+# Map image_id to class label
 image_id_to_label = {}
 for ann in coco['annotations']:
     image_id = ann['image_id']

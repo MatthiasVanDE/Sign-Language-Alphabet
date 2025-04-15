@@ -1,70 +1,102 @@
+# train_model.py
+
 import pandas as pd
 import os
 import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import (
+    accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+)
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score, classification_report
 
 # === Configuration ===
 INPUT_CSV = 'hand_landmarks_dataset.csv'
 MODEL_DIR = '../models'
-MODEL_TYPE = 'random_forest'  # Options: 'knn', 'random_forest', 'svm', 'logistic_regression'
+MODEL_TYPE = 'random_forest'  # 'knn', 'random_forest', 'svm', 'logistic_regression'
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-# === Load dataset ===
-df = pd.read_csv(INPUT_CSV)
+def train_and_evaluate(X, y, model_type='random_forest'):
+    """
+    Trains and evaluates one model type. Returns dict with metrics + fitted model.
+    """
+    # Split dataset into train and test sets
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
 
-# Separate features (X) and labels (y)
-X = df.drop(columns=['label']).values
-y = df['label'].values
+    # Choose model
+    if model_type == 'knn':
+        model = KNeighborsClassifier(n_neighbors=3)
+    elif model_type == 'random_forest':
+        model = RandomForestClassifier(n_estimators=100, random_state=42)
+    elif model_type == 'svm':
+        # Let op: probability=True om later predict_proba te kunnen gebruiken
+        model = SVC(kernel='rbf', C=1.0, gamma='scale', probability=True)
+    elif model_type == 'logistic_regression':
+        model = LogisticRegression(max_iter=1000, solver='lbfgs', multi_class='auto')
+    else:
+        raise ValueError(f"Unsupported MODEL_TYPE: {model_type}")
 
-# === Encode class labels as integers ===
-le = LabelEncoder()
-y_encoded = le.fit_transform(y)
+    # Train
+    model.fit(X_train, y_train)
 
-# === Split dataset into train and test sets ===
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
-)
+    # Predict
+    y_pred = model.predict(X_test)
+    # Proba (nodig voor ROC AUC bij binair)
+    # Bij multiclass moet je macro-averaging toepassen. Hier simplificeren we even.
+    if len(set(y)) == 2:  # binair
+        y_proba = model.predict_proba(X_test)[:, 1]
+    else:
+        y_proba = None
 
-# === Choose model based on selected MODEL_TYPE ===
-if MODEL_TYPE == 'knn':
-    print("Training K-Nearest Neighbors classifier...")
-    model = KNeighborsClassifier(n_neighbors=3)
+    # Compute metrics
+    acc = accuracy_score(y_test, y_pred)
+    prec = precision_score(y_test, y_pred, average='macro')
+    rec = recall_score(y_test, y_pred, average='macro')
+    f1 = f1_score(y_test, y_pred, average='macro')
+    if y_proba is not None:
+        roc_auc = roc_auc_score(y_test, y_proba)
+    else:
+        roc_auc = None
 
-elif MODEL_TYPE == 'random_forest':
-    print("Training Random Forest classifier...")
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    results = {
+        "model": model,
+        "accuracy": acc,
+        "precision": prec,
+        "recall": rec,
+        "f1_score": f1,
+        "roc_auc": roc_auc
+    }
+    return results
 
-elif MODEL_TYPE == 'svm':
-    print("Training Support Vector Machine classifier...")
-    model = SVC(kernel='rbf', C=1.0, gamma='scale', probability=True)
+if __name__ == "__main__":
+    # === Load dataset ===
+    df = pd.read_csv(INPUT_CSV)
+    X = df.drop(columns=['label']).values
+    y_raw = df['label'].values
 
-elif MODEL_TYPE == 'logistic_regression':
-    print("Training Logistic Regression classifier...")
-    model = LogisticRegression(max_iter=1000, solver='lbfgs', multi_class='auto')
+    # === Encode class labels as integers ===
+    le = LabelEncoder()
+    y = le.fit_transform(y_raw)
 
-else:
-    raise ValueError("Unsupported MODEL_TYPE. Use 'knn', 'random_forest', 'svm', or 'logistic_regression'.")
+    # === Train chosen model ===
+    print(f"Training model type: {MODEL_TYPE}")
+    metrics = train_and_evaluate(X, y, model_type=MODEL_TYPE)
+    model = metrics["model"]
 
-# === Train the selected model ===
-model.fit(X_train, y_train)
+    print(f"\nAccuracy on test set: {metrics['accuracy']:.2f}")
+    print(f"Precision: {metrics['precision']:.2f}")
+    print(f"Recall: {metrics['recall']:.2f}")
+    print(f"F1-score: {metrics['f1_score']:.2f}")
+    if metrics['roc_auc'] is not None:
+        print(f"ROC AUC: {metrics['roc_auc']:.2f}")
 
-# === Evaluate model performance ===
-y_pred = model.predict(X_test)
-accuracy = accuracy_score(y_test, y_pred)
-
-print(f"\nModel accuracy on test set: {accuracy:.2f}")
-print("\nClassification Report:")
-print(classification_report(y_test, y_pred, target_names=le.classes_))
-
-# === Save model and label encoder ===
-joblib.dump(model, os.path.join(MODEL_DIR, f'{MODEL_TYPE}_model.pkl'))
-joblib.dump(le, os.path.join(MODEL_DIR, 'label_encoder.pkl'))
-
-print(f"\nModel saved as '{MODEL_DIR}/{MODEL_TYPE}_model.pkl'")
-print(f"Label encoder saved as '{MODEL_DIR}/label_encoder.pkl'")
+    # === Save model and label encoder ===
+    joblib.dump(model, os.path.join(MODEL_DIR, f'{MODEL_TYPE}_model.pkl'))
+    joblib.dump(le, os.path.join(MODEL_DIR, 'label_encoder.pkl'))
+    print(f"Model saved as '{MODEL_DIR}/{MODEL_TYPE}_model.pkl'")
+    print(f"Label encoder saved as '{MODEL_DIR}/label_encoder.pkl'")
