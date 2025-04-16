@@ -29,7 +29,7 @@ The system identifies 21 keypoints on a single hand, then processes these landma
 3. **Generate CSV Dataset**  
 Detect and normalize landmarks for all images: 
   ```
-  python load.py.py
+  python load.py
   ```
 This produces a CSV file (e.g., `hand_landmarks_dataset.csv`) with the features and labels.
 

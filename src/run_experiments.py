@@ -18,8 +18,10 @@ from train_model import train_and_evaluate
 from utils import (
     no_normalization,
     translation_only,
+    translation_rotate,
     translation_scale,
-    extract_and_normalize_landmarks
+    extract_and_normalize_landmarks,
+    translation_scale_rotate
 )
 
 ###############################################################################
@@ -84,13 +86,16 @@ def experiment_normalization_strategies(df):
     # 1) none
     # 2) translation
     # 3) translation+scale
-    # 4) etc.
+    # 4) translation+rotate
+    # 5) translation_scale_rotate
 
     # Voor het idee laten we gewoon zien hoe je 3 methoden zou vergelijken:
     methods = {
         "none": lambda X: X,  # Stel dat X al ruwe data is
         "translation_only": translation_only,        # (maar die verwacht Mediapipe output)
         "translation_scale": translation_scale,
+        "translation_rotate": translation_rotate,
+        "translation_scale_rotate": translation_scale_rotate
     }
 
     # We hebben nu al in df direct genormaliseerde data.
