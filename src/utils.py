@@ -72,7 +72,7 @@ def no_normalization(hand_landmarks):
     """
     return [coord for lm in hand_landmarks.landmark for coord in (lm.x, lm.y, lm.z)]
 
-def translation_only(hand_landmarks):
+def translate_only(hand_landmarks):
     """
     Only wrist to (0,0,0); no scaling.
     """
@@ -81,7 +81,7 @@ def translation_only(hand_landmarks):
     centered = center_landmarks(raw_landmarks, wrist)
     return [coord for point in centered for coord in point]
 
-def translation_scale(hand_landmarks):
+def translate_scale(hand_landmarks):
     """
     Translation + scaling.
     """
@@ -92,7 +92,7 @@ def translation_scale(hand_landmarks):
     scaled = scale_landmarks(centered, wrist, middle)
     return [coord for point in scaled for coord in point]
 
-def translation_rotate(hand_landmarks):
+def translate_rotate(hand_landmarks):
     """
     Translation + rotation normalisation.
     """
@@ -102,7 +102,7 @@ def translation_rotate(hand_landmarks):
     rotated = rotation_correction(centered)
     return [coord for point in rotated for coord in point]
 
-def translation_scale_rotate(hand_landmarks):
+def translate_scale_rotate(hand_landmarks):
     """
     Translation + scaling + rotation normalisation.
     """
