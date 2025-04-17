@@ -22,9 +22,8 @@ def scale_landmarks(landmarks, ref_a, ref_b):
 
 def extract_and_normalize_landmarks(hand_landmarks):
     """
-    Retrieve (x, y, z) coördinates from Mediapipe-handlandmarks, center the wrist,
-    scale based on the distance between wrist and the tip of the middlefinger
-    and rotate so the middlefinger stands straight above the wrist
+    Retrieve (x, y, z) coördinates from Mediapipe-handlandmarks, center the wrist
+    and scale based on the distance between wrist and the tip of the middlefinger.
     Returns a flattened list of 63 values (21 landmarks)
     """
     raw_landmarks = [(lm.x, lm.y, lm.z) for lm in hand_landmarks.landmark]
