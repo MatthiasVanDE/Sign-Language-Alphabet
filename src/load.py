@@ -16,6 +16,7 @@ ANNOTATIONS_FILE = '../data/_annotations.coco.json'
 OUTPUT_CSV = 'hand_landmarks_dataset.csv'
 
 def load_images(to_csv=True, norm_func=extract_and_normalize_landmarks):
+    print("Loading all images from dataset")
     # === Load COCO annotations ===
     with open(ANNOTATIONS_FILE, 'r') as f:
         coco = json.load(f)
@@ -38,7 +39,7 @@ def load_images(to_csv=True, norm_func=extract_and_normalize_landmarks):
     # === Prepare containers for data ===
     all_data = []
     all_labels = []
-
+    print("Processing images")
     # === Process each annotated image ===
     for image_id, filename in image_id_to_filename.items():
         label = image_id_to_label.get(image_id)

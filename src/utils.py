@@ -20,32 +20,6 @@ def scale_landmarks(landmarks, ref_a, ref_b):
     distance = distance if distance != 0 else 1  # voorkom delen door nul
     return [(x / distance, y / distance, z / distance) for (x, y, z) in landmarks]
 
-def rotation_correction(landmarks):
-    """
-    Rotation correction over the wrist->middlefinger-axis.
-    """
-    (x,y,z) = landmarks[0] # wrist
-    middle = landmarks[12] # might be preprocessed
-    target = np.array([x, y+1, z]) # the target is a unit vector from the wristpoint to the middle finger tip
-
-    # Find the rotation axis (cross product)
-    crossproduct = np.cross(middle, target)
-    axis = crossproduct / np.linalg.norm(crossproduct)
-
-    # Find the rotation angle (dot product)
-    cos_angle = np.dot(middle, target)
-    sin_angle = np.sin(np.arccos(cos_angle))
-
-    # Use the Rodrigues' rotation formula
-    K = np.array([
-        [0, -axis[2], axis[1]],
-        [axis[2], 0, -axis[0]],
-        [-axis[1], axis[0], 0]
-    ])
-
-    rotation_matrix = np.eye(3) + K * sin_angle + (1 - cos_angle) * np.dot(K, K)
-    return [np.dot(rotation_matrix, landmark) for landmark in landmarks]
-
 def extract_and_normalize_landmarks(hand_landmarks):
     """
     Retrieve (x, y, z) coördinates from Mediapipe-handlandmarks, center the wrist,
@@ -59,8 +33,7 @@ def extract_and_normalize_landmarks(hand_landmarks):
 
     centered = center_landmarks(raw_landmarks, wrist)
     scaled = scale_landmarks(centered, wrist, middle_finger_tip)
-    rotated = rotation_correction(scaled)
-    return [coord for point in rotated for coord in point]
+    return [coord for point in scaled for coord in point]
 
 # --------------------------
 # Optionally: Alternative normalisation methods
@@ -92,15 +65,31 @@ def translate_scale(hand_landmarks):
     scaled = scale_landmarks(centered, wrist, middle)
     return [coord for point in scaled for coord in point]
 
-def translate_rotate(hand_landmarks):
+def rotation_correction(landmarks):
     """
-    Translation + rotation normalisation.
+    Rotation correction over the wrist->middlefinger-axis.
     """
-    raw_landmarks = [(lm.x, lm.y, lm.z) for lm in hand_landmarks.landmark]
-    wrist = raw_landmarks[0]
-    centered = center_landmarks(raw_landmarks, wrist)
-    rotated = rotation_correction(centered)
-    return [coord for point in rotated for coord in point]
+    (x,y,z) = landmarks[0] # wrist
+    middle = landmarks[12] # might be preprocessed
+    target = np.array([x, y+1, z]) # the target is a unit vector from the wristpoint to the middle finger tip
+
+    # Find the rotation axis (cross product)
+    crossproduct = np.cross(middle, target)
+    axis = crossproduct / np.linalg.norm(crossproduct)
+
+    # Find the rotation angle (dot product)
+    cos_angle = np.dot(middle, target)
+    sin_angle = np.sin(np.arccos(cos_angle))
+
+    # Use the Rodrigues' rotation formula
+    K = np.array([
+        [0, -axis[2], axis[1]],
+        [axis[2], 0, -axis[0]],
+        [-axis[1], axis[0], 0]
+    ])
+
+    rotation_matrix = np.eye(3) + K * sin_angle + (1 - cos_angle) * np.dot(K, K)
+    return [np.dot(rotation_matrix, landmark) for landmark in landmarks]
 
 def translate_scale_rotate(hand_landmarks):
     """
