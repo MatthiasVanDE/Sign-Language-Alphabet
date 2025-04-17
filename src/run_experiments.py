@@ -18,9 +18,7 @@ from train_model import train_and_evaluate
 # Importeer normalisatiefuncties
 from utils import (
     no_normalization,
-    scale_rotate,
     translate_only,
-    translate_rotate,
     translate_scale,
     translate_scale_rotate,
 )
@@ -74,7 +72,6 @@ def experiment_normalization_strategies():
         "none": no_normalization,
         "translate_only": translate_only,
         "translate_scale": translate_scale,
-        "translate_rotate": translate_rotate,
         "translate_scale_rotate": translate_scale_rotate
     }
 
