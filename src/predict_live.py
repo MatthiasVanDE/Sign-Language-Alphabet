@@ -7,7 +7,7 @@ import numpy as np
 import os
 import math
 
-from utils import extract_and_normalize_landmarks  # of een andere normalisatiestrategie
+from normalization import extract_and_normalize_landmarks  # of een andere normalisatiestrategie
 
 # === Configuration ===
 MODEL_DIR = '../models'
