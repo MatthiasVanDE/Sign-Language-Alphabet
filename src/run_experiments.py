@@ -43,8 +43,7 @@ def experiment_model_comparison(X, y):
             "accuracy": metrics["accuracy"],
             "precision": metrics["precision"],
             "recall": metrics["recall"],
-            "f1_score": metrics["f1_score"],
-            "roc_auc": metrics["roc_auc"]
+            "f1_score": metrics["f1_score"]
         })
 
     df_results = pd.DataFrame(results)
@@ -134,6 +133,7 @@ def experiment_augmentation_strategies(X, y):
     # Augment the originally undetected images to try improve detection rates  
     pre_detect_methods = {
         "aug_bbox": aug_bbox,
+        "aug_colors": aug_colors,
     }
     X, y, undetected = load_images(to_csv=False)
 
