@@ -1,5 +1,3 @@
-# run_experiments.py
-
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
@@ -7,12 +5,15 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 
-# Importeer de train_and_evaluate-functie
+from sklearn.model_selection import GroupKFold, train_test_split
+from sklearn.metrics import accuracy_score
+
+# Import the train_and_evaluate function
 from augmentation import aug_bbox, aug_colors, aug_flip, aug_rotate, aug_rotate_and_flip, no_aug
 from load import load_images
 from train_model import train_and_evaluate
 
-# Importeer normalisatiefuncties
+# Import normalization functions
 from normalization import (
     no_normalization,
     translate_only,
@@ -21,12 +22,12 @@ from normalization import (
 )
 
 ###############################################################################
-# EXPERIMENT 1: Modelvergelijking
+# EXPERIMENT 1: Model comparison
 ###############################################################################
 
 def experiment_model_comparison(X, y):
     """
-    Vergelijk 4 modellen: KNN, RandomForest, SVM, LogisticRegression
+    Compare 4 models: KNN, RandomForest, SVM, LogisticRegression
     op accuracy, precision, recall, f1, (roc).
     """
     models_to_compare = ['knn', 'random_forest', 'svm', 'logistic_regression']
@@ -53,7 +54,7 @@ def experiment_model_comparison(X, y):
 
 
 ###############################################################################
-# EXPERIMENT 2: Normalisatiestrategieën
+# EXPERIMENT 2: Normalization strategies
 ###############################################################################
 
 def experiment_normalization_strategies():
@@ -85,13 +86,14 @@ def experiment_normalization_strategies():
 
 
 ###############################################################################
-# EXPERIMENT 3: Dimensiereductie (PCA, t-SNE)
+# EXPERIMENT 3: Dimensionality reduction (PCA, t-SNE)
 ###############################################################################
 
 def experiment_dimensionality_reduction(X, y):
     """
-    Voer PCA en t-SNE uit voor visualisatie in 2D.
+    Perform PCA and t-SNE for 2D visualization.
     """
+    print("\n=== Dimensionality reduction (PCA, t-SNE) Experiment ===")
     # PCA
     pca = PCA(n_components=2)
     X_pca = pca.fit_transform(X)
@@ -128,7 +130,7 @@ def experiment_augmentation_strategies(X, y):
     """
     Applies different augmentation strategies both pre-hand-landmarkdetection as pre-training)
     """
-    
+    print("\n=== Augmentation strategies Experiment ===")
     # Augment the originally undetected images to try improve detection rates  
     pre_detect_methods = {
         "aug_bbox": aug_bbox,
@@ -164,7 +166,7 @@ def experiment_augmentation_strategies(X, y):
         print(f"{name} -> Acc={results['accuracy']:.2f}, F1={results['f1_score']:.2f}")
 
 ###############################################################################
-# EXPERIMENT 4B: Rotation augmentation over diffferent angles
+# EXPERIMENT 4B: Rotation augmentation over different angles
 ###############################################################################
 
 def experiment_rotation_augmentation(X, y):
@@ -192,35 +194,7 @@ def experiment_rotation_augmentation(X, y):
     # plt.legend()
     # plt.show()
 
-###############################################################################
-# EXPERIMENT 5: Cross-user validatie
-###############################################################################
 
-# Als je in je CSV een kolom 'user_id' hebt, kun je 'GroupKFold' gebruiken:
-from sklearn.model_selection import GroupKFold, train_test_split
-from sklearn.metrics import accuracy_score
-
-def cross_user_validation(X, y, user_ids, model_type='random_forest'):
-    """
-    Leave-One-User-Out (LOUO) cross-validation.
-    """
-    gkf = GroupKFold(n_splits=len(set(user_ids)))
-    accuracies = []
-
-    from train_model import train_and_evaluate
-    for train_idx, test_idx in gkf.split(X, y, groups=user_ids):
-        X_train, X_test = X[train_idx], X[test_idx]
-        y_train, y_test = y[train_idx], y[test_idx]
-
-        # Train and evaluate
-        metrics = train_and_evaluate([X_train, y_train, X_test, y_test], model_type=model_type)
-        model = metrics["model"]
-
-        y_pred = model.predict(X_test)
-        acc = accuracy_score(y_test, y_pred)
-        accuracies.append(acc)
-
-    return np.mean(accuracies)
 
 
 ###############################################################################
@@ -228,7 +202,6 @@ def cross_user_validation(X, y, user_ids, model_type='random_forest'):
 ###############################################################################
 
 if __name__ == "__main__":
-    # 1) Laad je dataset (normaal, via load.py al gegenereerd)
     df = pd.read_csv("hand_landmarks_dataset.csv")
     X = df.drop(columns=['label']).values
     y_raw = df['label'].values
@@ -236,13 +209,12 @@ if __name__ == "__main__":
     le = LabelEncoder()
     y = le.fit_transform(y_raw)
 
-    # 2) Voer experimenten uit
 
-    # Experiment 1: Normalization strategies
-    experiment_normalization_strategies()
-
-    # Experiment 2: Model comparison
+    # Experiment 1: Model comparison
     experiment_model_comparison(X, y)
+
+    # Experiment 2: Normalization strategies
+    experiment_normalization_strategies()
 
     # Experiment 3: Dimensionality reduction
     experiment_dimensionality_reduction(X, y)
@@ -252,11 +224,5 @@ if __name__ == "__main__":
 
     # Experiment 4B: Rotation augmentation
     experiment_rotation_augmentation(X, y)
-
-    # Experiment 5: Cross-user (alleen als je user_id in df hebt)
-    # if 'user_id' in df.columns:
-    #     user_ids = df['user_id'].values
-    #     mean_acc = cross_user_validation(X, y, user_ids, model_type='random_forest')
-    #     print(f"Cross-user mean accuracy: {mean_acc:.2f}")
 
     print("\nAll experiments completed.")

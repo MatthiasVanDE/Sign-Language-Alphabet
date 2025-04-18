@@ -1,5 +1,3 @@
-# train_model.py
-
 import pandas as pd
 import os
 import joblib
@@ -44,8 +42,6 @@ def train_and_evaluate(split_dataset, model_type='random_forest'):
 
     # Predict
     y_pred = model.predict(X_test)
-    # Proba (nodig voor ROC AUC bij binair)
-    # Bij multiclass moet je macro-averaging toepassen. Hier simplificeren we even.
     if len(set(y_train)) == 2:  # binair
         y_proba = model.predict_proba(X_test)[:, 1]
     else:

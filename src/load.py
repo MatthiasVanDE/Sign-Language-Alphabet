@@ -1,13 +1,8 @@
-# load.py
-
 import cv2
 import mediapipe as mp
 import os
 import pandas as pd
 import json
-import math
-
-# === Nieuw: importeer de herbruikbare functies uit utils.py ===
 from normalization import extract_and_normalize_landmarks
 
 # === Configuration ===

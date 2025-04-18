@@ -1,17 +1,12 @@
-# predict_live.py
-
 import cv2
 import mediapipe as mp
 import joblib
-import numpy as np
 import os
-import math
-
-from normalization import extract_and_normalize_landmarks  # of een andere normalisatiestrategie
+from normalization import extract_and_normalize_landmarks  # or another normalization strategy
 
 # === Configuration ===
 MODEL_DIR = '../models'
-MODEL_PATH = os.path.join(MODEL_DIR, 'random_forest_model.pkl')  # Pas aan naar jouw model
+MODEL_PATH = os.path.join(MODEL_DIR, 'random_forest_model.pkl')  # Choose model
 ENCODER_PATH = os.path.join(MODEL_DIR, 'label_encoder.pkl')
 
 # === Load model and label encoder ===
