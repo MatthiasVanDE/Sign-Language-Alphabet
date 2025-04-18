@@ -1,10 +1,6 @@
 # run_experiments.py
 
 import pandas as pd
-import cv2
-import mediapipe as mp
-import os
-import math
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from sklearn.decomposition import PCA
@@ -12,15 +8,14 @@ from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 
 # Importeer de train_and_evaluate-functie
+from augmentation import aug_bbox, aug_colors, aug_flip, aug_rotate, aug_rotate_and_flip, no_aug
 from load import load_images
 from train_model import train_and_evaluate
 
 # Importeer normalisatiefuncties
-from utils import (
+from normalization import (
     no_normalization,
-    scale_rotate,
     translate_only,
-    translate_rotate,
     translate_scale,
     translate_scale_rotate,
 )
@@ -36,9 +31,12 @@ def experiment_model_comparison(X, y):
     """
     models_to_compare = ['knn', 'random_forest', 'svm', 'logistic_regression']
     results = []
+    split_dataset = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
 
     for m in models_to_compare:
-        metrics = train_and_evaluate(X, y, model_type=m)
+        metrics = train_and_evaluate(split_dataset, model_type=m)
         results.append({
             "model_type": m,
             "accuracy": metrics["accuracy"],
@@ -64,27 +62,25 @@ def experiment_normalization_strategies():
     """
 
     print("\n=== Normalization Strategies Experiment ===")
-    # 1) none
-    # 2) translation
-    # 3) translation+scale
-    # 4) translation+rotate
-    # 5) translation_scale_rotate
 
     methods = {
         "none": no_normalization,
         "translate_only": translate_only,
         "translate_scale": translate_scale,
-        "translate_rotate": translate_rotate,
         "translate_scale_rotate": translate_scale_rotate
     }
 
     for name, func in methods.items():
         # Load in the dataset using the different normalization techniques
         print(f"Applying {name} normalization")
-        X, y = load_images(to_csv=False, norm_func=func)
+        X, y,_ = load_images(to_csv=False, norm_func=func)
+
+        split_dataset = train_test_split(
+            X, y, test_size=0.2, random_state=42, stratify=y
+        )
 
         # Train & evaluate
-        results = train_and_evaluate(X, y, model_type='random_forest')
+        results = train_and_evaluate(split_dataset, model_type='random_forest')
         print(f"{name} -> Acc={results['accuracy']:.2f}, F1={results['f1_score']:.2f}")
 
 
@@ -124,11 +120,84 @@ def experiment_dimensionality_reduction(X, y):
 
 
 ###############################################################################
-# EXPERIMENT 4: Cross-user validatie
+# EXPERIMENT 4: Augmentation strategies
+###############################################################################
+
+
+def experiment_augmentation_strategies(X, y):
+    """
+    Applies different augmentation strategies both pre-hand-landmarkdetection as pre-training)
+    """
+    
+    # Augment the originally undetected images to try improve detection rates  
+    pre_detect_methods = {
+        "aug_bbox": aug_bbox,
+    }
+    X, y, undetected = load_images(to_csv=False)
+
+    for name, func in pre_detect_methods.items():
+        X_detected, y_detected, _ = func(undetected)
+        X_custom = np.concatenate((X, X_detected))
+        y_custom = np.concatenate((y, y_detected))
+        split_dataset = train_test_split(
+            X_custom, y_custom, test_size=0.2, random_state=42, stratify=y_custom
+        )
+        results = train_and_evaluate(split_dataset)
+        print(f"{name} -> Acc={results['accuracy']:.2f}, F1={results['f1_score']:.2f}")
+
+
+    # Augment the landmarks to hopefully improve accuracy
+    post_detect_methods = {
+        "None": no_aug,
+        "aug_flip": aug_flip,
+        "aug_rotate_and_flip": aug_rotate_and_flip,
+    }
+    
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+
+    for name, func in post_detect_methods.items():
+        print(f"Applying {name} augmentation")
+        X_augmented, y_augmented = func(X_train, y_train)
+        results = train_and_evaluate([X_augmented, X_test, y_augmented, y_test])
+        print(f"{name} -> Acc={results['accuracy']:.2f}, F1={results['f1_score']:.2f}")
+
+###############################################################################
+# EXPERIMENT 4B: Rotation augmentation over diffferent angles
+###############################################################################
+
+def experiment_rotation_augmentation(X, y):
+    """
+    Applies different degrees of rotation to the training set and evaluates the accuracy
+    """
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+
+    rotation_data = []
+    for angle in range(-90, 105, 15):
+        X_augmented, y_augmented = aug_rotate(X_train, y_train, angle)
+        results = train_and_evaluate([X_augmented, X_test, y_augmented, y_test])
+        rotation_data.append([angle, results['accuracy'], results['f1_score']])
+        print(f"{angle} degrees -> Acc={results['accuracy']:.2f}, F1={results['f1_score']:.2f}")
+
+    # rotation_data = np.array(rotation_data)
+    # plt.figure(figsize=(8, 6))
+    # plt.plot(rotation_data[:,0], rotation_data[:,1], 'r-o', label="Accuracy")
+    # plt.plot(rotation_data[:,0], rotation_data[:,2], 'b-o', label="F1-Score")
+    # plt.xlabel('Angle of rotation')
+    # plt.ylabel('Score')
+    # plt.title('Rotation augmentation results')
+    # plt.legend()
+    # plt.show()
+
+###############################################################################
+# EXPERIMENT 5: Cross-user validatie
 ###############################################################################
 
 # Als je in je CSV een kolom 'user_id' hebt, kun je 'GroupKFold' gebruiken:
-from sklearn.model_selection import GroupKFold
+from sklearn.model_selection import GroupKFold, train_test_split
 from sklearn.metrics import accuracy_score
 
 def cross_user_validation(X, y, user_ids, model_type='random_forest'):
@@ -144,11 +213,7 @@ def cross_user_validation(X, y, user_ids, model_type='random_forest'):
         y_train, y_test = y[train_idx], y[test_idx]
 
         # Train and evaluate
-        # Let op: train_and_evaluate doet zelf een train_test_split, dus
-        # we moeten daar omheen werken of train_and_evaluate hergebruiken op
-        # X_train, y_train/X_test, y_test.
-        # Hier doen we 'manual training' voor de eenvoud:
-        metrics = train_and_evaluate(X_train, y_train, model_type=model_type)
+        metrics = train_and_evaluate([X_train, y_train, X_test, y_test], model_type=model_type)
         model = metrics["model"]
 
         y_pred = model.predict(X_test)
@@ -182,7 +247,13 @@ if __name__ == "__main__":
     # Experiment 3: Dimensionality reduction
     experiment_dimensionality_reduction(X, y)
 
-    # Experiment 4: Cross-user (alleen als je user_id in df hebt)
+    # Experiment 4: Augmentation strategies
+    experiment_augmentation_strategies(X, y)
+
+    # Experiment 4B: Rotation augmentation
+    experiment_rotation_augmentation(X, y)
+
+    # Experiment 5: Cross-user (alleen als je user_id in df hebt)
     # if 'user_id' in df.columns:
     #     user_ids = df['user_id'].values
     #     mean_acc = cross_user_validation(X, y, user_ids, model_type='random_forest')

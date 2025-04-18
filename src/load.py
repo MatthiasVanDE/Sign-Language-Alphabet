@@ -8,7 +8,7 @@ import json
 import math
 
 # === Nieuw: importeer de herbruikbare functies uit utils.py ===
-from utils import extract_and_normalize_landmarks
+from normalization import extract_and_normalize_landmarks
 
 # === Configuration ===
 DATASET_DIR = '../data/train'
@@ -26,11 +26,13 @@ def load_images(to_csv=True, norm_func=extract_and_normalize_landmarks):
 
     # Map image_id to class label
     image_id_to_label = {}
+    image_id_to_bbox = {}
     for ann in coco['annotations']:
         image_id = ann['image_id']
         category_id = ann['category_id']
         label_name = next((cat['name'] for cat in coco['categories'] if cat['id'] == category_id), None)
         image_id_to_label[image_id] = label_name
+        image_id_to_bbox[image_id] = ann['bbox']
 
     # === Initialize Mediapipe Hands detector ===
     mp_hands = mp.solutions.hands
@@ -39,6 +41,7 @@ def load_images(to_csv=True, norm_func=extract_and_normalize_landmarks):
     # === Prepare containers for data ===
     all_data = []
     all_labels = []
+    undetected = []
     print("Processing images")
     # === Process each annotated image ===
     for image_id, filename in image_id_to_filename.items():
@@ -62,6 +65,9 @@ def load_images(to_csv=True, norm_func=extract_and_normalize_landmarks):
             # Save the processed data and corresponding label
             all_data.append(normalized_landmarks)
             all_labels.append(label)
+        else:
+            bbox = image_id_to_bbox.get(image_id)
+            undetected.append([filename, label, bbox])
 
     if to_csv:
         # === Save the result to CSV ===
@@ -74,10 +80,13 @@ def load_images(to_csv=True, norm_func=extract_and_normalize_landmarks):
             df['label'] = all_labels
             df.to_csv(OUTPUT_CSV, index=False)
             print(f"Dataset saved as {OUTPUT_CSV} with {successful_samples} samples out of {total_images} total images.")
+            print(f"{len(undetected)} images went undetected.")
         else:
             print(f"No landmarks were found in the {total_images} annotated images.")
     else:
-        return all_data, all_labels
+        print(f"Dataset consists of {len(all_data)} sets of landmarks with {len(all_labels)} labels.")
+        print(f"{len(undetected)} images went undetected.")
+        return all_data, all_labels, undetected
 
 if __name__ == "__main__":
     load_images()

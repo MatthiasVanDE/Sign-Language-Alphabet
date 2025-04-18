@@ -13,21 +13,19 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 
+from augmentation import aug_rotate_and_flip
+
 # === Configuration ===
 INPUT_CSV = 'hand_landmarks_dataset.csv'
 MODEL_DIR = '../models'
 MODEL_TYPE = 'random_forest'  # 'knn', 'random_forest', 'svm', 'logistic_regression'
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-def train_and_evaluate(X, y, model_type='random_forest'):
+def train_and_evaluate(split_dataset, model_type='random_forest'):
     """
     Trains and evaluates one model type. Returns dict with metrics + fitted model.
     """
-    # Split dataset into train and test sets
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
-
+    X_train, X_test, y_train, y_test = split_dataset
     # Choose model
     if model_type == 'knn':
         model = KNeighborsClassifier(n_neighbors=3)
@@ -48,7 +46,7 @@ def train_and_evaluate(X, y, model_type='random_forest'):
     y_pred = model.predict(X_test)
     # Proba (nodig voor ROC AUC bij binair)
     # Bij multiclass moet je macro-averaging toepassen. Hier simplificeren we even.
-    if len(set(y)) == 2:  # binair
+    if len(set(y_train)) == 2:  # binair
         y_proba = model.predict_proba(X_test)[:, 1]
     else:
         y_proba = None
@@ -85,7 +83,13 @@ if __name__ == "__main__":
 
     # === Train chosen model ===
     print(f"Training model type: {MODEL_TYPE}")
-    metrics = train_and_evaluate(X, y, model_type=MODEL_TYPE)
+    # Split dataset into train and test sets
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+    X_aug, y_aug = aug_rotate_and_flip(X_train, y_train)
+
+    metrics = train_and_evaluate([X_aug, X_test, y_aug, y_test], model_type=MODEL_TYPE)
     model = metrics["model"]
 
     print(f"\nAccuracy on test set: {metrics['accuracy']:.2f}")

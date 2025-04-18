@@ -46,7 +46,8 @@ This produces a CSV file (e.g., `hand_landmarks_dataset.csv`) with the features 
 A trained model file (e.g., `random_forest_model.pkl`) and a `label_encoder.pkl` will be saved under `models/`.
 
 5. **Run Experiments**  
-To compare multiple classifiers, try different normalization approaches, visualize via PCA/t-SNE, or perform cross-user validation:
+To compare multiple classifiers, try different normalization approaches, visualize via PCA/t-SNE, try different 
+augmentation methods or perform cross-user validation:
   ```
   python run_experiments.py
   ```
@@ -62,7 +63,7 @@ A window will open, showing the recognized letter on screen along with drawn han
 ## Future Directions
 
 - Extend the dataset for dynamic letters (like J and Z).
-- Implement more robust data augmentation (lighting, rotation, partial occlusion).
+- Implement more robust data augmentation (lighting, partial occlusion).
 - Explore deeper learning architectures (CNN, LSTM).
 - Use automated hyperparameter tuning for the traditional ML models.
 - Improve cross-user generalization with more diverse training samples.
