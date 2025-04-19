@@ -17,7 +17,7 @@ def scale_landmarks(landmarks, ref_a, ref_b):
         (ref_a[1] - ref_b[1])**2 +
         (ref_a[2] - ref_b[2])**2
     )
-    distance = distance if distance != 0 else 1  # prevend dividing by zero
+    distance = distance if distance != 0 else 1  # prevent dividing by zero
     return [(x / distance, y / distance, z / distance) for (x, y, z) in landmarks]
 
 def extract_and_normalize_landmarks(hand_landmarks):

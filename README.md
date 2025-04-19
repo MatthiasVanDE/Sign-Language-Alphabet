@@ -25,6 +25,8 @@ The system identifies 21 keypoints on a single hand, then processes these landma
 2. **Prepare the Dataset**  
 - Place images of hands forming ASL letters in the `data/train/` folder.  
 - Update `_annotations.coco.json` accordingly, specifying image filenames and labels.
+- During creation of this code, the following dataset was used: https://universe.roboflow.com/pranav-atote-ebc3y/american-sign-language-letters-dtfq9.
+
 
 3. **Generate CSV Dataset**  
 Detect and normalize landmarks for all images: 

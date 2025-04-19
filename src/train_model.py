@@ -4,7 +4,7 @@ import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+    accuracy_score, precision_score, recall_score, f1_score
 )
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
@@ -42,28 +42,19 @@ def train_and_evaluate(split_dataset, model_type='random_forest'):
 
     # Predict
     y_pred = model.predict(X_test)
-    if len(set(y_train)) == 2:  # binair
-        y_proba = model.predict_proba(X_test)[:, 1]
-    else:
-        y_proba = None
 
     # Compute metrics
     acc = accuracy_score(y_test, y_pred)
     prec = precision_score(y_test, y_pred, average='macro')
     rec = recall_score(y_test, y_pred, average='macro')
     f1 = f1_score(y_test, y_pred, average='macro')
-    if y_proba is not None:
-        roc_auc = roc_auc_score(y_test, y_proba)
-    else:
-        roc_auc = None
 
     results = {
         "model": model,
         "accuracy": acc,
         "precision": prec,
         "recall": rec,
-        "f1_score": f1,
-        "roc_auc": roc_auc
+        "f1_score": f1
     }
     return results
 
@@ -92,8 +83,6 @@ if __name__ == "__main__":
     print(f"Precision: {metrics['precision']:.2f}")
     print(f"Recall: {metrics['recall']:.2f}")
     print(f"F1-score: {metrics['f1_score']:.2f}")
-    if metrics['roc_auc'] is not None:
-        print(f"ROC AUC: {metrics['roc_auc']:.2f}")
 
     # === Save model and label encoder ===
     joblib.dump(model, os.path.join(MODEL_DIR, f'{MODEL_TYPE}_model.pkl'))
